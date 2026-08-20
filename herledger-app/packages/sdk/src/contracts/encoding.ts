@@ -1,5 +1,5 @@
 import { xdr, Address, nativeToScVal, scValToNative } from "@stellar/stellar-sdk";
-import { ContractError } from "../errors/index.js";
+import { ContractError, ContractErrorCode } from "../errors/index.js";
 
 // ---------------------------------------------------------------------------
 // Centralized XDR encoding/decoding utilities for Soroban contract calls.
@@ -12,7 +12,10 @@ import { ContractError } from "../errors/index.js";
 export function encodeBytes32(hex: string): xdr.ScVal {
   const bytes = hexToBytes(hex);
   if (bytes.length !== 32) {
-    throw new ContractError(`Expected 32-byte hex string, got ${bytes.length} bytes`);
+    throw new ContractError(
+      ContractErrorCode.ENCODE_ERROR,
+      `Expected 32-byte hex string, got ${bytes.length} bytes`
+    );
   }
   return xdr.ScVal.scvBytes(Buffer.from(bytes));
 }
@@ -93,13 +96,19 @@ export function decodeBool(val: xdr.ScVal): boolean {
 export function hexToBytes(hex: string): Uint8Array {
   const clean = hex.startsWith("0x") ? hex.slice(2) : hex;
   if (clean.length % 2 !== 0) {
-    throw new ContractError(`Invalid hex string length: ${clean.length}`);
+    throw new ContractError(
+      ContractErrorCode.ENCODE_ERROR,
+      `Invalid hex string length: ${clean.length}`
+    );
   }
   const bytes = new Uint8Array(clean.length / 2);
   for (let i = 0; i < clean.length; i += 2) {
     const byte = parseInt(clean.slice(i, i + 2), 16);
     if (isNaN(byte)) {
-      throw new ContractError(`Invalid hex character at position ${i}`);
+      throw new ContractError(
+        ContractErrorCode.ENCODE_ERROR,
+        `Invalid hex character at position ${i}`
+      );
     }
     bytes[i / 2] = byte;
   }
